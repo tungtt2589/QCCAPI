@@ -35,11 +35,13 @@ public class QuoraAPI extends AbstractVerticle {
         router.route(HttpMethod.POST,"/login").handler(this::login);
         router.route(HttpMethod.POST,"/getAllTopic").handler(this::getTopic);
         router.route(HttpMethod.POST,"/getAllQuestion").handler(this::getAllQuestion);
+        router.route(HttpMethod.POST,"/getAllQuestionByTopic").handler(this::getAllQuestionByTopic);
+        router.route(HttpMethod.POST,"/getQuestionByParams").handler(this::getQuestionByParams);
         router.route(HttpMethod.POST,"/createQuestion").handler(this::createQuestion);
         router.route(HttpMethod.POST,"/createAnswer").handler(this::createAnswer);
         router.route(HttpMethod.POST,"/getAllAnswer").handler(this::getAllAnswer);
         vertx.createHttpServer().requestHandler(router::accept).listen(port);
-        System.out.println("running mother fucker");
+        System.out.println("Server start");
     }
 
     public void login(RoutingContext r){
@@ -107,13 +109,34 @@ public class QuoraAPI extends AbstractVerticle {
         }
     }
 
-    public void getAllQuestion(RoutingContext r){
+    public void getAllQuestionByTopic(RoutingContext r){
+        JsonObject json = r.getBodyAsJson();
+        String questionId = json.getString("topic_id");
+        StringBuilder query = new StringBuilder("select D.*, C.counted from question D left join (select A.question_id E, count(*) as counted from answer A group by A.question_id) as C on\n" +
+                "D.question_id = C.E where topic_id = ?;");
+        ArrayList<Object> params = new ArrayList<>();
+        params.add(questionId);
         try {
-            List<Question> res = database.selectQuery(r.getBodyAsJson(), "question", Question.class, db.connectDb(), null);
-            sendData(res, r);
+            List<Question> result = database.executeQuery(query, params, Question.class, db.connectDb());
+            sendData(result, r);
         }
         catch (Exception e){
             e.printStackTrace();
+        }
+    }
+
+    public void getAllQuestion(RoutingContext r){
+        StringBuilder query = new StringBuilder("select D.*, C.counted from question D left join (select A.question_id E, count(*) as counted from answer A group by A.question_id) as C on\n" +
+                "D.question_id = C.E;");
+        try {
+
+            List<Question> result = database.executeQuery(query, null, Question.class, db.connectDb());
+            sendData(result, r);
+
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            sendResponse(r, "");
         }
     }
 
@@ -121,6 +144,22 @@ public class QuoraAPI extends AbstractVerticle {
         try {
             List<Answer> res = database.selectQuery(r.getBodyAsJson(), "answer", Answer.class, db.connectDb(), null);
             sendData(res, r);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public void getQuestionByParams(RoutingContext r){
+        JsonObject json = r.getBodyAsJson();
+        String questionId = json.getString("question_id");
+        StringBuilder query = new StringBuilder("select D.*, C.counted from question D left join (select A.question_id E, count(*) as counted from answer A group by A.question_id) as C on\n" +
+                "D.question_id = C.E where question_id = ?;");
+        ArrayList<Object> params = new ArrayList<>();
+        params.add(questionId);
+        try {
+            List<Question> result = database.executeQuery(query, params, Question.class, db.connectDb());
+            sendData(result, r);
         }
         catch (Exception e){
             e.printStackTrace();

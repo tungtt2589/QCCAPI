@@ -5,11 +5,13 @@ import java.util.Date;
 public class Question {
     int question_id;
     String content;
+    String description;
     String created_time;
     String edited_time;
     int status_id;
     int topic_id;
     int user_id;
+    int counted;
 
     public int getQuestion_id() {
         return question_id;
@@ -65,5 +67,21 @@ public class Question {
 
     public void setUser_id(int user_id) {
         this.user_id = user_id;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public int getCounted() {
+        return counted;
+    }
+
+    public void setCounted(int counted) {
+        this.counted = counted;
     }
 }
